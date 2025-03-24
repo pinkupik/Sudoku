@@ -88,7 +88,7 @@ test-homework02-private:
 validate-homework02:
   stage: validate
   variables:
-    ASSIGNMENT_DEADLINE: "2025-03-31T23:59:59"
+    ASSIGNMENT_DEADLINE: "2025-04-13T23:59:59"
   tags:
     - bi-pyt-assignment-validate
   script:
@@ -117,7 +117,7 @@ test-homework03-private:
   tags:
     - bi-pyt-assignment-private
   script:
-    - sudo -u nobody pytest -c /etc/config/pytest.ini -v --tb=no --no-summary -rN test_orb_private.py
+    - sudo -u nobody pytest -c /etc/config/pytest.ini -s -v --tb=no --no-summary -rN test_orb_private.py
     - sleep 10
   only:
     - homework03
@@ -130,7 +130,7 @@ test-homework03-private:
 validate-homework03:
   stage: validate
   variables:
-    ASSIGNMENT_DEADLINE: "2025-04-14T23:59:59"
+    ASSIGNMENT_DEADLINE: "2025-04-27T23:59:59"
   tags:
     - bi-pyt-assignment-validate
   script:
@@ -144,5 +144,6 @@ validate-homework03:
 
 ########################################################################
 before_script:
+  - python3 --version
   - python3 -c "import importlib as il; print('Local modules versions here in CI runner:'); print('\n'.join(f'{(im:=il.import_module(m)).__name__} == {im.__version__}' for m  in ['numpy', 'pylint', 'pytest']));"
 
