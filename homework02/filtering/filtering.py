@@ -46,13 +46,20 @@ def apply_filter(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
             ((pad_h, pad_h), (pad_w, pad_w), (0, 0)),
             mode='constant'
         )
-
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                filtered_image[i, j] = np.sum(
-                    kernel[..., np.newaxis] * padded_image[i:i + kernel.shape[0], j:j + kernel.shape[1], :],
-                    axis=(0, 1)
-                )
+        # Create a sliding window view into the padded image
+        shape = (image.shape[0], image.shape[1], kernel.shape[0], kernel.shape[1], image.shape[2])
+        strides = (
+            padded_image.strides[0], # pylint: disable=unsubscriptable-object
+            padded_image.strides[1], # pylint: disable=unsubscriptable-object
+            padded_image.strides[0], # pylint: disable=unsubscriptable-object
+            padded_image.strides[1], # pylint: disable=unsubscriptable-object
+            padded_image.strides[2]  # pylint: disable=unsubscriptable-object
+        )
+        sub_matrices = np.lib.stride_tricks.as_strided(
+            padded_image, shape=shape, strides=strides
+        )
+        # Perform the correlation using tensordot over the kernel dimensions
+        filtered_image = np.tensordot(sub_matrices, kernel, axes=([2, 3], [0, 1]))
     # Process grayscale image
     else:
         padded_image = np.pad(
@@ -60,12 +67,18 @@ def apply_filter(image: np.ndarray, kernel: np.ndarray) -> np.ndarray:
             ((pad_h, pad_h), (pad_w, pad_w)),
             mode='constant'
         )
-
-        for i in range(image.shape[0]):
-            for j in range(image.shape[1]):
-                filtered_image[i, j] = np.sum(
-                    kernel * padded_image[i:i + kernel.shape[0], j:j + kernel.shape[1]]
-                )
+        # Create sliding window view for grayscale image
+        shape = (image.shape[0], image.shape[1], kernel.shape[0], kernel.shape[1])
+        strides = (
+            padded_image.strides[0], # pylint: disable=unsubscriptable-object
+            padded_image.strides[1], # pylint: disable=unsubscriptable-object
+            padded_image.strides[0], # pylint: disable=unsubscriptable-object
+            padded_image.strides[1]  # pylint: disable=unsubscriptable-object
+        )
+        sub_matrices = np.lib.stride_tricks.as_strided(
+            padded_image, shape=shape, strides=strides
+        )
+        filtered_image = np.tensordot(sub_matrices, kernel, axes=([2, 3], [0, 1]))
 
     # Clip values to valid range and convert back to original dtype
     return np.clip(filtered_image, 0, 255).astype(image.dtype)
