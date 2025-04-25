@@ -322,8 +322,8 @@ def get_harris_response(img: np.ndarray) -> np.ndarray:
     harris_response : np.ndarray
         Harris response of the input image.
     """
-    ix = get_x_derivative(img)
-    iy = get_y_derivative(img)
+    ix = get_x_derivative(img) / 255
+    iy = get_y_derivative(img) / 255
 
     sxx = apply_gaussian_2d(data=ix * ix, sigma=1.0)
     syy = apply_gaussian_2d(data=iy * iy, sigma=1.0)
