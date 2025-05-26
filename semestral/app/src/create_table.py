@@ -618,7 +618,7 @@ def extract_sudoku_data_from_image(image_path, show_steps=False):
 
 # --- Example Usage ---
 if __name__ == "__main__":
-    image_file_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image2.png' 
+    image_file_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image3.png' 
     # Test with a clear image first. You might need to adjust preprocessing
     # parameters (blur, thresholding, border_ratio in preprocess_cell_for_ocr)
     # for different image qualities.

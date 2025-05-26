@@ -16,30 +16,34 @@ ocr = PaddleOCR(use_angle_cls=False, lang='en') # need to run only once to downl
 # to switch the language model in order.
 
 def test_create_table():
-    image = cv2.imread('/home/tomas/PYT/motustom/semestral/app/tests/images/image2.png')
-    thresh = ct.preprocess_image(image)
-    print(ct.create(image, thresh))
-    img_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image2.png'
-    result = ocr.predict(img_path)
-    for res in result:
-        res.save_to_img("output")
-    img_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image1.jpg'
-    result = ocr.predict(img_path)
-    for res in result:
-        res.save_to_img("output")
-    image = cv2.imread('/home/tomas/PYT/motustom/semestral/app/tests/images/image3.png')
-    thresh = ct.preprocess_image(image)
-    result = ct.create(image, thresh)
-    np.set_printoptions(threshold=sys.maxsize)
-    print(result)
+    # image = cv2.imread('/home/tomas/PYT/motustom/semestral/app/tests/images/image2.png')
+    # thresh = ct.preprocess_image(image)
+    # print(ct.create(image, thresh))
+    # img_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image2.png'
+    # result = ocr.predict(img_path)
+    # for res in result:
+    #     res.save_to_img("output")
+    # img_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image1.jpg'
+    # result = ocr.predict(img_path)
+    # for res in result:
+    #     res.save_to_img("output")
+    # image = cv2.imread('/home/tomas/PYT/motustom/semestral/app/tests/images/image3.png')
+    # thresh = ct.preprocess_image(image)
+    # result = ct.create(image, thresh)
+    # np.set_printoptions(threshold=sys.maxsize)
+    # print(result)
     img_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image3.png'
     result = ocr.predict(img_path)
     for res in result:
         res.save_to_img("output")
-    img_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image4.png'
-    result = ocr.predict(img_path)
-    for res in result:
-        res.save_to_img("output")
+        res.save_to_json("output")
+        print(res["rec_polys"])
+        for poly in res["rec_polys"]:
+            print(poly[1][0]-poly[0][0], poly[2][1]-poly[1][1])
+    # img_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image4.png'
+    # result = ocr.predict(img_path)
+    # for res in result:
+    #     res.save_to_img("output")
 
 def test_preprocess_image():
     image = cv2.imread('/home/tomas/PYT/motustom/semestral/app/tests/images/image1.jpg')
