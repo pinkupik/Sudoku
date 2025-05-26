@@ -180,30 +180,95 @@ def order_points(pts):
     rect[3] = pts[np.argmax(diff)]
     return rect
 
+def detect_blue_pen_content(image):
+    """
+    Enhanced blue pen detection using multiple color spaces
+    Optimized for handwritten Sudoku with blue pen
+    """
+    if len(image.shape) != 3 or image.shape[2] != 3:
+        return np.zeros(image.shape[:2], dtype=np.uint8)
+    
+    # Method 1: Blue channel enhancement
+    blue_channel = image[:,:,2].astype(np.float32)
+    red_channel = image[:,:,0].astype(np.float32)
+    green_channel = image[:,:,1].astype(np.float32)
+    
+    # Enhance blue relative to other channels
+    blue_enhanced = blue_channel - 0.3 * (red_channel + green_channel) / 2
+    blue_enhanced = np.clip(blue_enhanced, 0, 255).astype(np.uint8)
+    _, blue_thresh = cv2.threshold(blue_enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    # Method 2: HSV blue detection with multiple ranges
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    
+    # Standard blue range
+    lower_blue1 = np.array([100, 50, 50])
+    upper_blue1 = np.array([130, 255, 255])
+    blue_mask1 = cv2.inRange(hsv, lower_blue1, upper_blue1)
+    
+    # Darker blue range
+    lower_blue2 = np.array([110, 30, 30])
+    upper_blue2 = np.array([140, 255, 200])
+    blue_mask2 = cv2.inRange(hsv, lower_blue2, upper_blue2)
+    
+    # Method 3: LAB color space
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    b_channel = lab[:,:,2]
+    _, lab_blue = cv2.threshold(b_channel, 140, 255, cv2.THRESH_BINARY)
+    
+    # Combine all blue detection methods
+    combined_blue = cv2.bitwise_or(blue_thresh, blue_mask1)
+    combined_blue = cv2.bitwise_or(combined_blue, blue_mask2)
+    combined_blue = cv2.bitwise_or(combined_blue, lab_blue)
+    
+    # Clean up noise
+    kernel = np.ones((2,2), np.uint8)
+    combined_blue = cv2.morphologyEx(combined_blue, cv2.MORPH_OPEN, kernel)
+    
+    return combined_blue
+
 def load_and_preprocess_image(image_path):
     """
-    Loads an image, converts it to grayscale, applies blur, and adaptive thresholding.
-    Returns the original image, the grayscale image, and the thresholded image for grid detection.
+    Enhanced image loading and preprocessing with blue pen detection
+    Returns the original image, the grayscale image, and improved thresholded image for grid detection.
     """
     original_image = cv2.imread(image_path)
     if original_image is None:
         raise FileNotFoundError(f"Nebolo možné načítať obrázok: {image_path}")
 
     gray_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
-    blurred_image = cv2.GaussianBlur(gray_image, (7, 7), 0)
+    blurred_image = cv2.GaussianBlur(gray_image, (5, 5), 0)
     
-    # Thresholding for grid detection (lines should be black on white or vice-versa)
-    # THRESH_BINARY_INV can be good if grid lines are darker than background
-    thresholded_for_grid = cv2.adaptiveThreshold(
+    # Enhanced detection combining traditional methods with blue pen detection
+    # Traditional adaptive thresholding
+    traditional_thresh = cv2.adaptiveThreshold(
         blurred_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY_INV, 11, 2 
     )
+    
+    # Blue pen detection
+    blue_pen_mask = detect_blue_pen_content(original_image)
+    
+    # Edge detection for grid lines
+    edges = cv2.Canny(blurred_image, 50, 150)
+    
+    # Combine all detection methods
+    combined_mask = cv2.bitwise_or(traditional_thresh, blue_pen_mask)
+    combined_mask = cv2.bitwise_or(combined_mask, edges)
+    
+    # Clean up the combined mask
+    kernel_close = np.ones((5,5), np.uint8)
+    thresholded_for_grid = cv2.morphologyEx(combined_mask, cv2.MORPH_CLOSE, kernel_close)
+    
+    kernel_open = np.ones((3,3), np.uint8)
+    thresholded_for_grid = cv2.morphologyEx(thresholded_for_grid, cv2.MORPH_OPEN, kernel_open)
+    
     return original_image, gray_image, thresholded_for_grid
 
 def find_sudoku_grid_contour(processed_image):
     """
-    Finds the largest square-like contour in the processed (thresholded) image,
-    assumed to be the Sudoku grid.
+    Enhanced function to find the largest square-like contour in the processed image.
+    Uses multiple approaches to find the Sudoku grid with better robustness.
     Returns the contour points.
     """
     contours, _ = cv2.findContours(
@@ -211,12 +276,46 @@ def find_sudoku_grid_contour(processed_image):
     )
     if not contours:
         return None
+    
+    # Sort contours by area
     contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    
+    # Calculate minimum area threshold (more flexible)
+    image_area = processed_image.shape[0] * processed_image.shape[1]
+    min_area_threshold = image_area * 0.05  # At least 5% of image
+    max_area_threshold = image_area * 0.90  # At most 90% of image
+    
+    # Try to find a good rectangular contour
     for c in contours:
+        area = cv2.contourArea(c)
+        
+        # Skip contours that are too small or too large
+        if area < min_area_threshold or area > max_area_threshold:
+            continue
+            
         perimeter = cv2.arcLength(c, True)
-        approx_poly = cv2.approxPolyDP(c, 0.02 * perimeter, True)
-        if len(approx_poly) == 4 and cv2.contourArea(approx_poly) > (processed_image.shape[0] * processed_image.shape[1] * 0.1):
-            return approx_poly
+        
+        # Try different approximation levels
+        for epsilon_factor in [0.01, 0.02, 0.03, 0.05, 0.08]:
+            epsilon = epsilon_factor * perimeter
+            approx_poly = cv2.approxPolyDP(c, epsilon, True)
+            
+            if len(approx_poly) == 4:
+                # Check if it's reasonably square
+                rect = cv2.minAreaRect(c)
+                width, height = rect[1]
+                if width > 0 and height > 0:
+                    aspect_ratio = max(width, height) / min(width, height)
+                    if aspect_ratio < 2.5:  # Allow some tolerance for perspective
+                        return approx_poly
+    
+    # Fallback: use bounding rectangle of largest valid contour
+    for c in contours:
+        area = cv2.contourArea(c)
+        if min_area_threshold <= area <= max_area_threshold:
+            x, y, w, h = cv2.boundingRect(c)
+            return np.array([[[x, y]], [[x+w, y]], [[x+w, y+h]], [[x, y+h]]], dtype=np.int32)
+    
     return None
 
 def warp_perspective_grid(image_for_warp, contour_points, output_size=450):
@@ -257,9 +356,10 @@ def split_grid_into_cells(warped_grid_image, grid_dimensions=(9, 9)):
 
 def preprocess_cell_for_ocr(cell_image, digit_output_size=28, cell_border_ratio=0.15):
     """
+    Enhanced cell preprocessing optimized for blue pen handwriting.
     Processes an individual cell image to isolate and prepare a potential digit for OCR.
     - Removes a border to get rid of grid lines.
-    - Thresholds the cell to isolate the digit (digit as black on white background for Pytesseract).
+    - Uses multiple thresholding methods to handle blue pen better.
     - Finds the largest contour (assumed to be the digit).
     - Resizes the digit to a standard size.
     Returns a processed image of the digit, or None if the cell is likely empty or unclear.
@@ -277,95 +377,143 @@ def preprocess_cell_for_ocr(cell_image, digit_output_size=28, cell_border_ratio=
     if cropped_cell.size == 0:
         return None
 
-    # Heuristic: If the cell is almost entirely white (empty), skip
-    # Pytesseract generally prefers black text on white background.
-    # The input `cell_image` is grayscale from the warped grid.
-    # If mean is very high (close to 255), it's mostly white.
-    # If mean is very low (close to 0), it's mostly black.
-    # We are looking for a digit, which should create some contrast.
-    if np.mean(cropped_cell) > 245: # Mostly white, likely empty
+    # Enhanced emptiness check - more robust for blue pen
+    mean_intensity = np.mean(cropped_cell)
+    std_intensity = np.std(cropped_cell)
+    
+    # If very uniform (low standard deviation) and bright, likely empty
+    if mean_intensity > 240 and std_intensity < 10:
+        return None
+    
+    # If very uniform and dark, might be noise
+    if mean_intensity < 15 and std_intensity < 10:
         return None
 
-    # Threshold to make the digit black on a white background.
-    # This is often preferred by Tesseract.
-    # Otsu's method is good for automatically finding an optimal threshold.
-    # We want the digit to be black (0) and background white (255).
-    _, thresholded_cell_digit = cv2.threshold(
-        cropped_cell, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU # Digit becomes white
-    )
-    # Invert again so digit is black on white for Pytesseract
-    thresholded_cell_digit = cv2.bitwise_not(thresholded_cell_digit)
+    # Multiple thresholding approaches for better blue pen handling
+    # Method 1: OTSU thresholding
+    _, thresh_otsu = cv2.threshold(cropped_cell, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+    
+    # Method 2: Adaptive thresholding
+    thresh_adaptive = cv2.adaptiveThreshold(cropped_cell, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                          cv2.THRESH_BINARY_INV, 11, 2)
+    
+    # Method 3: Manual threshold for blue pen (often appears as gray)
+    _, thresh_manual = cv2.threshold(cropped_cell, 180, 255, cv2.THRESH_BINARY_INV)
+    
+    # Combine thresholding methods
+    combined_thresh = cv2.bitwise_or(thresh_otsu, thresh_adaptive)
+    combined_thresh = cv2.bitwise_or(combined_thresh, thresh_manual)
+    
+    # Clean up noise
+    kernel_noise = np.ones((2,2), np.uint8)
+    combined_thresh = cv2.morphologyEx(combined_thresh, cv2.MORPH_OPEN, kernel_noise)
+    
+    # Fill small holes in digits
+    kernel_fill = np.ones((3,3), np.uint8)
+    combined_thresh = cv2.morphologyEx(combined_thresh, cv2.MORPH_CLOSE, kernel_fill)
 
-
-    # Find contours in the thresholded cell (where digit is now black)
-    digit_contours, _ = cv2.findContours(
-        cv2.bitwise_not(thresholded_cell_digit.copy()), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE # Find white contours on black
-    )
+    # Find contours in the enhanced thresholded cell
+    digit_contours, _ = cv2.findContours(combined_thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if not digit_contours:
         return None 
 
-    largest_digit_contour = max(digit_contours, key=cv2.contourArea)
+    # Filter contours by area and find the best candidate
+    valid_contours = []
+    min_area = (cropped_cell.shape[0] * cropped_cell.shape[1]) * 0.02  # At least 2% of cell
+    max_area = (cropped_cell.shape[0] * cropped_cell.shape[1]) * 0.80  # At most 80% of cell
     
-    min_digit_area_ratio = 0.03 
-    if cv2.contourArea(largest_digit_contour) < (cropped_cell.shape[0] * cropped_cell.shape[1] * min_digit_area_ratio):
+    for contour in digit_contours:
+        area = cv2.contourArea(contour)
+        if min_area <= area <= max_area:
+            # Check aspect ratio to filter out non-digit shapes
+            x, y, w, h = cv2.boundingRect(contour)
+            if w > 0 and h > 0:
+                aspect_ratio = max(w, h) / min(w, h)
+                if aspect_ratio < 5.0:  # Reasonable aspect ratio for digits
+                    valid_contours.append((contour, area))
+    
+    if not valid_contours:
         return None
-
+    
+    # Choose the largest valid contour
+    largest_digit_contour = max(valid_contours, key=lambda x: x[1])[0]
+    
     x, y, w, h = cv2.boundingRect(largest_digit_contour)
 
-    # Extract the digit ROI from the (digit black, bg white) thresholded cell
-    # The ROI should be based on the thresholded_cell_digit which has black digit on white bg
-    digit_roi = thresholded_cell_digit[y : y + h, x : x + w]
+    # Extract the digit ROI - invert so digit is black on white for Tesseract
+    digit_roi = combined_thresh[y : y + h, x : x + w]
+    digit_roi_inverted = cv2.bitwise_not(digit_roi)  # Black digit on white background
     
-    # Add some padding around the digit ROI, keeping it black on white
-    padding = 10 # pixels
-    padded_digit = cv2.copyMakeBorder(digit_roi, padding, padding, padding, padding, 
-                                      cv2.BORDER_CONSTANT, value=[255,255,255]) # White padding
+    # Add padding around the digit ROI
+    padding = 10
+    padded_digit = cv2.copyMakeBorder(digit_roi_inverted, padding, padding, padding, padding, 
+                                      cv2.BORDER_CONSTANT, value=[255,255,255])
 
-
-    # Resize to a standard output size, maintaining aspect ratio if needed,
-    # but for single digits, direct resize is often fine.
-    # Pytesseract might not strictly need 28x28, but consistent size can help if further processing was planned.
-    # Let's try without resizing to a fixed square first, using the padded version.
-    # final_digit_image = cv2.resize(
-    #     padded_digit, (digit_output_size, digit_output_size), interpolation=cv2.INTER_AREA
-    # )
-    final_digit_image = padded_digit # Use the padded ROI directly
-
-    return final_digit_image
+    return padded_digit
 
 def recognize_digit_with_pytesseract(cell_image_for_ocr):
     """
+    Enhanced digit recognition optimized for blue pen handwriting.
     Recognizes a digit from a preprocessed cell image using Pytesseract.
     Returns the recognized digit (int 1-9) or 0 if not recognized/invalid.
     """
     if cell_image_for_ocr is None:
         return 0
 
-    # Pytesseract configuration:
-    # --psm 10: Treat the image as a single character.
-    # --oem 3: Default OCR engine mode.
-    # -c tessedit_char_whitelist=123456789: Only recognize digits 1-9.
-    custom_config = r'--oem 3 --psm 10 -c tessedit_char_whitelist=123456789'
+    # Enhanced Pytesseract configuration for better blue pen digit recognition
+    # Try multiple configurations and take the best result
+    configs = [
+        r'--oem 3 --psm 10 -c tessedit_char_whitelist=123456789',  # Single character
+        r'--oem 3 --psm 8 -c tessedit_char_whitelist=123456789',   # Single word
+        r'--oem 3 --psm 7 -c tessedit_char_whitelist=123456789',   # Single text line
+        r'--oem 1 --psm 10 -c tessedit_char_whitelist=123456789',  # LSTM engine
+    ]
+    
+    recognized_digits = []
     
     try:
-        text = pytesseract.image_to_string(cell_image_for_ocr, config=custom_config)
-        # Clean up result (it might have newlines or spaces)
-        text = text.strip()
-        if text.isdigit():
-            digit = int(text)
-            if digit == 0:
-                digit = 9
-            if 1 <= digit <= 9:
-                return digit
+        # Apply slight morphological operations for better recognition
+        kernel = np.ones((2,2), np.uint8)
+        enhanced_image = cv2.morphologyEx(cell_image_for_ocr, cv2.MORPH_CLOSE, kernel)
+        
+        # Try each configuration
+        for config in configs:
+            try:
+                text = pytesseract.image_to_string(enhanced_image, config=config)
+                text = text.strip()
+                
+                # Extract valid digits from the result
+                for char in text:
+                    if char.isdigit() and '1' <= char <= '9':
+                        recognized_digits.append(int(char))
+                
+                # Also try with original image
+                text_orig = pytesseract.image_to_string(cell_image_for_ocr, config=config)
+                text_orig = text_orig.strip()
+                
+                for char in text_orig:
+                    if char.isdigit() and '1' <= char <= '9':
+                        recognized_digits.append(int(char))
+                        
+            except Exception:
+                continue
+        
+        # If we have recognized digits, return the most common one
+        if recognized_digits:
+            from collections import Counter
+            counter = Counter(recognized_digits)
+            most_common_digit = counter.most_common(1)[0][0]
+            return most_common_digit
+            
     except pytesseract.TesseractNotFoundError:
         print("Chyba: Tesseract nie je nainštalovaný alebo nie je v PATH.")
         print("Nainštalujte Tesseract OCR a/alebo nastavte pytesseract.tesseract_cmd")
-        # Propagate the error or handle it by returning 0 for all subsequent cells
         raise 
     except Exception as e:
-        # print(f"Chyba pri rozpoznávaní Pytesseractom: {e}")
-        pass # Silently fail for a single cell, return 0
+        # Silently fail for a single cell
+        pass
+    
     return 0
 
 

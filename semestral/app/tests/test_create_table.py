@@ -9,7 +9,8 @@ import numpy as np
 from src import create_table as ct
 import pytesseract as tess
 from paddleocr import PaddleOCR
-ocr = PaddleOCR(use_angle_cls=False, lang='german') # need to run only once to download and load model into memory
+import skimage
+ocr = PaddleOCR(use_angle_cls=False, lang='en') # need to run only once to download and load model into memory
 # Paddleocr supports Chinese, English, French, German, Korean and Japanese.
 # You can set the parameter `lang` as `ch`, `en`, `french`, `german`, `korean`, `japan`
 # to switch the language model in order.
@@ -32,6 +33,10 @@ def test_create_table():
     np.set_printoptions(threshold=sys.maxsize)
     print(result)
     img_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image3.png'
+    result = ocr.predict(img_path)
+    for res in result:
+        res.save_to_img("output")
+    img_path = '/home/tomas/PYT/motustom/semestral/app/tests/images/image4.png'
     result = ocr.predict(img_path)
     for res in result:
         res.save_to_img("output")
