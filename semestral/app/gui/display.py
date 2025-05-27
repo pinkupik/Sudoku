@@ -1,5 +1,6 @@
 import sys
 import os
+import types
 import importlib
 from pathlib import Path
 
@@ -7,23 +8,23 @@ from pathlib import Path
 os.environ["HOME"] = "/tmp"
 os.environ["XDG_CACHE_HOME"] = "/tmp"
 
-# Patch font download path before paddlex loads fonts
-download_mod = importlib.import_module("paddlex.utils.download")
-fonts_mod = importlib.import_module("paddlex.utils.fonts")
+# Fake paddlex.utils.fonts BEFORE it's ever imported
+fake_fonts_mod = types.ModuleType("paddlex.utils.fonts")
 
-_orig_get_font = fonts_mod.get_font_file_path
-
-def _get_font_file_path_override(font_name: str):
-    font_path = Path("/tmp") / font_name
-    if not font_path.is_file():
+# Define fake font loader
+def get_font_file_path(font_name: str):
+    local_path = Path("/tmp") / font_name
+    if not local_path.exists():
+        import paddlex.utils.download as download_mod
         download_mod.download(
             url=f"https://paddle-model-ecology.bj.bcebos.com/paddlex/PaddleX3.0/fonts/{font_name}",
-            save_path=str(font_path)
+            save_path=str(local_path),
         )
-    return str(font_path)
+    return str(local_path)
 
-fonts_mod.get_font_file_path = _get_font_file_path_override
-
+# Inject our fake module
+fake_fonts_mod.get_font_file_path = get_font_file_path
+sys.modules["paddlex.utils.fonts"] = fake_fonts_mod
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
