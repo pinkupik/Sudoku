@@ -25,6 +25,7 @@ def get_font_file_path(font_name: str):
 # Inject our fake module
 fake_fonts_mod.get_font_file_path = get_font_file_path
 sys.modules["paddlex.utils.fonts"] = fake_fonts_mod
+import paddlex
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
