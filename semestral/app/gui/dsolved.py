@@ -1,7 +1,7 @@
 import streamlit as st
 
 def display_solved(board):
-        st.write("### Sudoku Board (Replica)")
+        st.write("### Solved Sudoku Board")
         with st.container():
             for i in range(9):
                 cols = st.columns(9, gap="small")
