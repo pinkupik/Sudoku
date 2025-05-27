@@ -3,3 +3,4 @@ numpy
 paddlepaddle
 paddleocr
 opencv-python
+setuptools
