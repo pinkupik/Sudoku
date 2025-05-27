@@ -1,32 +1,5 @@
 import sys
 import os
-import types
-import importlib
-from pathlib import Path
-
-# Ensure paddlex writes to a writable directory
-os.environ["HOME"] = "/tmp"
-os.environ["XDG_CACHE_HOME"] = "/tmp"
-
-# Fake paddlex.utils.fonts BEFORE it's ever imported
-fake_fonts_mod = types.ModuleType("paddlex.utils.fonts")
-
-# Define fake font loader
-def get_font_file_path(font_name: str):
-    local_path = Path("/tmp") / font_name
-    if not local_path.exists():
-        import paddlex.utils.download as download_mod
-        download_mod.download(
-            url=f"https://paddle-model-ecology.bj.bcebos.com/paddlex/PaddleX3.0/fonts/{font_name}",
-            save_path=str(local_path),
-        )
-    return str(local_path)
-
-# Inject our fake module
-fake_fonts_mod.get_font_file_path = get_font_file_path
-sys.modules["paddlex.utils.fonts"] = fake_fonts_mod
-# Manually inject paddlex.utils.fonts module before it is imported
-fonts_path = "/tmp/paddlex/utils"
 os.makedirs(fonts_path, exist_ok=True)
 
 with open(os.path.join(fonts_path, "fonts.py"), "w") as f:
