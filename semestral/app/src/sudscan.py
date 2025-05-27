@@ -5,7 +5,6 @@ This module provides functionality to process images containing Sudoku puzzles
 and convert them into numerical matrices using PaddleOCR for text recognition.
 """
 import numpy as np
-from paddleocr import PaddleOCR
 import cv2
 
 
@@ -30,6 +29,7 @@ def scan_table(image_path):
           consecutive columns
         - Detected text outside the 9x9 grid boundaries is ignored
     """
+    from paddleocr import PaddleOCR
     ocr = PaddleOCR(use_textline_orientation=False, lang='en')  # Initialize OCR model
     sudoku_matrix = np.zeros((9, 9), dtype=int)  # Initialize empty Sudoku matrix
     image = ocr.predict(image_path)  # Perform OCR on the image
