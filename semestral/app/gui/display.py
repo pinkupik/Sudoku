@@ -25,6 +25,15 @@ def get_font_file_path(font_name: str):
 # Inject our fake module
 fake_fonts_mod.get_font_file_path = get_font_file_path
 sys.modules["paddlex.utils.fonts"] = fake_fonts_mod
+# Manually inject paddlex.utils.fonts module before it is imported
+fonts_path = "/tmp/paddlex/utils"
+os.makedirs(fonts_path, exist_ok=True)
+
+with open(os.path.join(fonts_path, "fonts.py"), "w") as f:
+    f.write("PINGFANG_FONT_FILE_PATH = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'\n")
+
+# Ensure it's on sys.path before importing paddlex
+sys.path.insert(0, "/tmp")
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
