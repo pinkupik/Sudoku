@@ -2,4 +2,4 @@ streamlit
 numpy
 paddlepaddle
 paddleocr
-opencv
+opencv-python
