@@ -1,31 +1,29 @@
 import sys
 import os
 import importlib
-# 1) Create and point all cache dirs at a local '.cache' folder
-CACHE_DIR = os.path.join(os.getcwd(), ".cache")
-os.makedirs(CACHE_DIR, exist_ok=True)
-os.environ["HOME"] = CACHE_DIR
-os.environ["XDG_CACHE_HOME"] = CACHE_DIR
+from pathlib import Path
 
-# 2) Monkey-patch Paddlex's font loader so downloaded fonts go into .cache/
-#    (must do this BEFORE any paddlex/utils/fonts import)
+# Ensure paddlex writes to a writable directory
+os.environ["HOME"] = "/tmp"
+os.environ["XDG_CACHE_HOME"] = "/tmp"
+
+# Patch font download path before paddlex loads fonts
 download_mod = importlib.import_module("paddlex.utils.download")
-fonts_mod   = importlib.import_module("paddlex.utils.fonts")
+fonts_mod = importlib.import_module("paddlex.utils.fonts")
 
 _orig_get_font = fonts_mod.get_font_file_path
+
 def _get_font_file_path_override(font_name: str):
-    # where to save it
-    dest = os.path.join(CACHE_DIR, font_name)
-    if not os.path.exists(dest):
-        # use the same download logic but override save path
+    font_path = Path("/tmp") / font_name
+    if not font_path.is_file():
         download_mod.download(
             url=f"https://paddle-model-ecology.bj.bcebos.com/paddlex/PaddleX3.0/fonts/{font_name}",
-            save_path=dest,
-            print_progress=False
+            save_path=str(font_path)
         )
-    return dest
+    return str(font_path)
 
 fonts_mod.get_font_file_path = _get_font_file_path_override
+
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
