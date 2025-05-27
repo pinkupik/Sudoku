@@ -207,6 +207,9 @@ class SudokuBoardDetector:
         Returns:
             Tuple of detection results
         """
+        # height = image.shape[0]
+        # width = image.shape[1]
+        # image = image[height//50:-height//50,width//50:-width//50]  # Crop to avoid borders
         # Convert to grayscale
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -214,7 +217,6 @@ class SudokuBoardDetector:
             gray = image.copy()
         
         # Apply all detection methods
-        blue_pen_mask = self.enhance_blue_pen_content(image)
         grid_mask, edges, h_lines, v_lines = self.detect_grid_structure(gray)
         content_mask = self.detect_handwritten_content(gray)
         
@@ -223,7 +225,6 @@ class SudokuBoardDetector:
         combined = np.zeros((h, w), dtype=np.float32)
         
         # Assign weights based on detection confidence
-        combined += blue_pen_mask.astype(np.float32) * 0.35  # Blue pen is highly indicative
         combined += grid_mask.astype(np.float32) * 0.30      # Grid structure is important
         combined += content_mask.astype(np.float32) * 0.25   # General handwritten content
         combined += edges.astype(np.float32) * 0.10          # Edge information
@@ -243,7 +244,6 @@ class SudokuBoardDetector:
         
         return {
             'combined_mask': final_mask,
-            'blue_pen': blue_pen_mask,
             'grid_structure': grid_mask,
             'content': content_mask,
             'edges': edges
@@ -470,10 +470,6 @@ class SudokuBoardDetector:
         # Detection masks
         if 'detection_masks' in result:
             masks = result['detection_masks']
-            
-            axes[0,1].imshow(masks['blue_pen'], cmap='gray')
-            axes[0,1].set_title('Blue Pen Detection')
-            axes[0,1].axis('off')
             
             axes[0,2].imshow(masks['grid_structure'], cmap='gray')
             axes[0,2].set_title('Grid Structure')
