@@ -2,6 +2,10 @@ import sys
 import os
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+CACHE_DIR = os.path.join(os.getcwd(), ".cache")
+os.makedirs(CACHE_DIR, exist_ok=True)
+os.environ["HOME"] = CACHE_DIR
+os.environ["XDG_CACHE_HOME"] = CACHE_DIR
 import streamlit as st
 import numpy as np
 from src import sudsolve as ssolve
