@@ -1,6 +1,6 @@
 streamlit
 numpy
 paddlepaddle
-paddleocr
+paddleocr==3.0.0
 opencv-python
 setuptools
