@@ -4,4 +4,3 @@ paddlepaddle
 paddleocr
 opencv-python
 setuptools
-libgl1
