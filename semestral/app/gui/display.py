@@ -1,12 +1,5 @@
 import sys
 import os
-os.makedirs(fonts_path, exist_ok=True)
-
-with open(os.path.join(fonts_path, "fonts.py"), "w") as f:
-    f.write("PINGFANG_FONT_FILE_PATH = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'\n")
-
-# Ensure it's on sys.path before importing paddlex
-sys.path.insert(0, "/tmp")
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
