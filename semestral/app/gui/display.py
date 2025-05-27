@@ -1,5 +1,15 @@
 import sys
 import os
+import types
+import paddlex.utils.fonts
+
+# Simulate missing paddlex.utils.fonts.PINGFANG_FONT_FILE_PATH
+if not hasattr(paddlex.utils.fonts, "PINGFANG_FONT_FILE_PATH"):
+    paddlex.utils.fonts.PINGFANG_FONT_FILE_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+
+# Recreate the expected module if it's broken
+sys.modules["paddlex.utils.fonts"] = paddlex.utils.fonts
+
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import streamlit as st
