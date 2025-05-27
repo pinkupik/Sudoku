@@ -4,3 +4,4 @@ paddlepaddle
 paddleocr==3.0.0
 opencv-python
 setuptools
+paddlex
