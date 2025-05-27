@@ -29,8 +29,33 @@ def scan_table(image_path):
           consecutive columns
         - Detected text outside the 9x9 grid boundaries is ignored
     """
+    import urllib.request
+    import tarfile
+    import os
+
+    urls = {
+        "det": "https://paddleocr.bj.bcebos.com/ppocr_v4/en/en_PP-OCRv4_det_infer.tar",
+        "rec": "https://paddleocr.bj.bcebos.com/ppocr_v4/en/en_PP-OCRv4_rec_infer.tar",
+        "cls": "https://paddleocr.bj.bcebos.com/ppocr_v4/ch/ch_ppocr_mobile_v2.0_cls_infer.tar"  # optional
+    }
+    
+    output_dir = "./paddleocr_models"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    for name, url in urls.items():
+        print(f"Downloading {name} model...")
+        tar_path = os.path.join(output_dir, f"{name}.tar")
+        urllib.request.urlretrieve(url, tar_path)
+
+        with tarfile.open(tar_path, "r") as tar:
+            tar.extractall(path=output_dir)
+        os.remove(tar_path)
+
     from paddleocr import PaddleOCR
-    ocr = PaddleOCR(use_textline_orientation=False, lang='en')  # Initialize OCR model
+    ocr = PaddleOCR(use_textline_orientation=False, lang='en',
+        det_model_dir='paddleocr_models/en_PP-OCRv4_det_infer',
+        rec_model_dir='paddleocr_models/en_PP-OCRv4_rec_infer',
+        cls_model_dir='paddleocr_models/ch_ppocr_mobile_v2.0_cls_infer')  # Initialize OCR model
     sudoku_matrix = np.zeros((9, 9), dtype=int)  # Initialize empty Sudoku matrix
     image = ocr.predict(image_path)  # Perform OCR on the image
     image_width = cv2.imread(image_path).shape[1]  # Get image width #pylint: disable=E1101 #(cv2.imread does not exist)
