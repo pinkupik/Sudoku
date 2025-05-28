@@ -8,7 +8,7 @@ def display_solved(board):
                 for j in range(9):
                     cell_value = "" if board[i][j] == 0 else str(board[i][j])
                     cols[j].text_input(
-                        label="",
+                        label="{i}{j}2",
                         value=cell_value,
                         max_chars=1,
                         key=f"sudoku_replica_{i}_{j}",

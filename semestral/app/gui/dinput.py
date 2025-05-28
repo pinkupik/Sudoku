@@ -12,7 +12,7 @@ def display_input(board):
                 for j in range(9):
                     cell_value = "" if board[i][j] == 0 else str(board[i][j])
                     value = cols[j].text_input(
-                        label="",
+                        label="{i}{j}1",
                         value=cell_value,
                         max_chars=1,
                         key=f"sudoku_{i}_{j}",
