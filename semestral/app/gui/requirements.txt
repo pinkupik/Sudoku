@@ -11,7 +11,7 @@ pillow==11.1.0
 
 # OCR and Text Recognition
 paddleocr==3.0.0
-paddlex[ocr]==3.0.0
+https://paddle-model-ecology.bj.bcebos.com/paddlex/whl/paddlex-3.0.0b2-py3-none-any.whl
 
 # Numerical Computing and Data Analysis
 numpy==1.26.4
