@@ -1,5 +1,6 @@
 import sys
 import os
+os.environ['HOME'] = "/mount/src/sudoku/semestral"
 import types
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
