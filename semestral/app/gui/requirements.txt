@@ -14,39 +14,39 @@ paddleocr==3.0.0
 https://paddle-model-ecology.bj.bcebos.com/paddlex/whl/paddlex-3.0.0b2-py3-none-any.whl
 
 # Numerical Computing and Data Analysis
-numpy==1.26.4
-pandas==1.5.3
-scipy==1.15.2
-scikit-learn==1.6.1
+numpy
+pandas
+scipy
+scikit-learn
 
 # Visualization
-matplotlib==3.10.0
+matplotlib
 
 # Jupyter Notebook Support
-jupyter==1.1.1
-ipykernel==6.29.5
-ipython==8.12.3
-notebook==7.3.2
+jupyter
+ipykernel
+ipython
+notebook
 
 # Testing Framework
-pytest==8.3.4
-pytest-timeout==2.3.1
+pytest
+pytest-timeout
 
 # Development Tools
-flake8==7.1.2
-pylint==3.3.4
+flake8
+pylint
 
 # Utilities
-requests==2.32.3
-tqdm==4.67.1
-pyyaml==6.0.2
+requests
+tqdm
+pyyaml
 
 # Web Framework (if using Streamlit interface)
-streamlit==1.45.1
+streamlit
 
 # Additional Image Processing
-pyclipper==1.3.0.post6
-shapely==2.1.1
+pyclipper
+shapely
 
 # File Processing
-openpyxl==3.1.5
+openpyxl
