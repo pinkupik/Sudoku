@@ -53,9 +53,11 @@ def scan_table(image_path):
 
     from paddleocr import PaddleOCR
     ocr = PaddleOCR(use_textline_orientation=False, lang='en',
-        det_model_dir='paddleocr_models/en_PP-OCRv4_det_infer',
-        rec_model_dir='paddleocr_models/en_PP-OCRv4_rec_infer',
-        cls_model_dir='paddleocr_models/ch_ppocr_mobile_v2.0_cls_infer')  # Initialize OCR model
+                    text_detection_model_dir="app/official_models/PP-OCRv5_mobile_det",
+                    text_recognition_model_dir="app/official_models/PP-OCRv5_mobile_rec",
+                    doc_orientation_classify_model_dir="app/official_models/PP-LCNet_x1_0_doc_ori",
+                    text_line_orientation_model_dir="app/official_models/PP-LCNet_x0_25_textline_ori",
+                    doc_unwarping_model_dir="app/official_models/UVDoc")  # Initialize OCR model
     sudoku_matrix = np.zeros((9, 9), dtype=int)  # Initialize empty Sudoku matrix
     image = ocr.predict(image_path)  # Perform OCR on the image
     image_width = cv2.imread(image_path).shape[1]  # Get image width #pylint: disable=E1101 #(cv2.imread does not exist)
