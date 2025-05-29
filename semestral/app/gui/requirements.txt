@@ -1,6 +1,6 @@
 # Core dependencies for Sudoku Detection and OCR Project
 # Generated from .venv on 2025-05-29
-paddlex==3.0
+paddlex==3.0rc1
 # Computer Vision and Image Processing
 opencv-python==4.11.0.86
 opencv-contrib-python==4.10.0.84
