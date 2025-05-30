@@ -5,6 +5,7 @@ from app.gui import display
 import streamlit as st
 
 def main():
+    st.set_page_config(layout="wide")  # Use the whole width of the screen
     display.display()
 
 if __name__ == "__main__":
