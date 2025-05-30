@@ -7,6 +7,7 @@ from app.src import sudscan as sscan
 from app.src.sudoku_detector import SudokuBoardDetector
 
 def display():
+    st.set_page_config(layout="wide")  # Use the whole width of the screen
     st.header("Crazy AI Sudoku Solver++ Ultra Edition")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
     captured_image = None
