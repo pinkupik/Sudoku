@@ -4,6 +4,7 @@ import pytesseract as tess
 # from paddleocr import PaddleOCR
 # ocr = PaddleOCR(use_angle_cls=True, lang='en') # need to run only once to download and load model into memory
 
+
 def detect_digit(cell):
     """
     Detects a digit in a cell image using OCR with pytesseract.

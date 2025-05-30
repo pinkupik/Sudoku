@@ -439,14 +439,16 @@ class SudokuBoardDetector:
                     result['success'] = True
                 except Exception as e:
                     result['error'] = f'Perspective transformation failed: {str(e)}'
+                    result['board'] = image
             else:
                 result['error'] = 'No valid board rectangle detected'
+                result['board'] = image
             
             return result
             
         except Exception as e:
-            return {'success': False, 'error': f'Detection failed: {str(e)}'}
-    
+            return {'success': False, 'error': f'Detection failed: {str(e)}', 'board': image}
+
     def visualize_detection(self, result, save_path=None, figsize=(16, 12)):
         """
         Visualize the detection process and results

@@ -11,7 +11,7 @@ pillow==11.1.0
 
 # OCR and Text Recognition
 paddleocr==3.0.0
-paddlex[ocr]==3.0.0
+paddlepaddle==3.0.0
 
 # Numerical Computing and Data Analysis
 numpy==1.26.4

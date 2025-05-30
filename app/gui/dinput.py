@@ -5,14 +5,14 @@ def display_input(board):
         st.write("### Sudoku Board")
         board_state = []
         # Use a container to control layout
-        with st.container():
+        with st.container(key="sudoku_input_container"):
             for i in range(9):
                 cols = st.columns(9, gap="small")
                 row = []
                 for j in range(9):
                     cell_value = "" if board[i][j] == 0 else str(board[i][j])
                     value = cols[j].text_input(
-                        label="{i}{j}1",
+                        label=f"input_cell_{i}_{j}",
                         value=cell_value,
                         max_chars=1,
                         key=f"sudoku_{i}_{j}",
